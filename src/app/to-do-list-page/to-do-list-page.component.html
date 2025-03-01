@@ -1,0 +1,40 @@
+<div class="to-do-list-page">
+    <div class="todo-header">
+        <div class="header-content">
+            <h1 class="todo-title">Task Management System</h1>
+            <p class="todo-subtitle">Achieve More with Organized Productivity</p>
+        </div>
+        <div class="header-graphic">
+            <div class="graphic-circle"></div>
+            <div class="graphic-bar"></div>
+        </div>
+    </div>
+
+    <div class="todo-main-content">
+        <section class="todo-form-section">
+            <div class="form-container">
+                <app-to-do-form (toDoAdd)="toDoAddHandler($event)"></app-to-do-form>
+            </div>
+        </section>
+
+        <section class="todo-list-section">
+            <div class="list-header">
+                <div class="list-title-group">
+                    <h2 class="list-title">Task Overview</h2>
+                    <span class="task-counter">{{ toDoItems.length }} items</span>
+                </div>
+                <nav class="list-controls">
+                    <button class="filter-btn" [class.active]="filter === 'All'" (click)="setFilter('All')">All</button>
+                    <button class="filter-btn" [class.active]="filter === 'Active'"
+                        (click)="setFilter('Active')">Active</button>
+                    <button class="filter-btn" [class.active]="filter === 'Done'"
+                        (click)="setFilter('Done')">Completed</button>
+                </nav>
+            </div>
+
+            <div class="list-container">
+                <app-to-do-list [toDoItems]="filteredItems"></app-to-do-list>
+            </div>
+        </section>
+    </div>
+</div>

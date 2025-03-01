@@ -1,0 +1,68 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+h1 {
+    text-align: center;
+    color: #ffffff;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.addToDoContainer {
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.addToDoInput {
+    font-size: 1.2em;
+    padding: 8px 12px;
+    border: 2px solid #007bff;
+    border-radius: 6px;
+    outline: none;
+    background: #f9f9f9;
+    width: fit-content;
+    min-width: 50px;
+    max-width: 400px;
+    transition: border 0.3s ease-in-out, background 0.3s;
+}
+
+.addToDoInput:focus {
+    border-color: #0056b3;
+    background: white;
+}
+
+.addToDoButton {
+    font-size: 1.2em;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s ease;
+}
+
+.addToDoButton:hover {
+    transform: scale(1.1);
+    background-color: #0056b3;
+}
+
+@media (max-width: 600px) {
+    .addToDoContainer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .addToDoInput {
+        width: 100%;
+        font-size: 1em;
+    }
+
+    .addToDoButton {
+        width: 100%;
+        font-size: 1em;
+    }
+}

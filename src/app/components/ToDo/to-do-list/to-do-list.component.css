@@ -1,0 +1,225 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+h1 {
+    text-align: center;
+    color: #ffffff;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.toDoContainer {
+    font-family: 'Poppins', sans-serif;
+    width: 100%;
+    max-width: 60%;
+    background: #f5f5f5;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+    margin: auto;
+    background: linear-gradient(145deg, #6b7e99, #4e5f70);
+}
+
+.toDoContainer:hover {
+    transform: scale(1.01);
+}
+
+.toDoContainer.hidden {
+    display: none;
+}
+
+.toDoItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    background: #ffffff;
+    border-radius: 6px;
+    transition: background 0.3s, transform 0.2s;
+    gap: 10px;
+    margin: 10px auto;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex-wrap: wrap;
+}
+
+.toDoItem.hidden {
+    display: none;
+}
+
+.toDoItem:hover {
+    transform: scale(1.02);
+    background: #f1f1f1;
+}
+
+.toDoItem.deleted {
+    background-color: #e2e2e2;
+}
+
+.toDoItemText {
+    font-size: 1.1rem;
+    font-weight: bold;
+    flex: 1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    padding: 5px 10px;
+    transition: color 0.3s;
+    word-wrap: break-word;
+    color: #333;
+}
+
+.toDoItemText.deleted {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.editInput {
+    font-size: 1.1rem;
+    padding: 6px 10px;
+    border: 2px solid #3498db;
+    border-radius: 6px;
+    outline: none;
+    background: #f9f9f9;
+    min-width: 60px;
+    max-width: 100%;
+    transition: border 0.3s ease-in-out, background 0.3s;
+}
+
+.editInput:focus {
+    border-color: #2980b9;
+    background: white;
+}
+
+.toDoItemActions {
+    display: flex;
+    gap: 8px;
+}
+
+.toDoItemActions button {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: transform 0.2s, color 0.2s;
+}
+
+.toDoItemActions button:hover {
+    transform: scale(1.2);
+}
+
+.toDoItemActions .fa-edit {
+    color: #f39c12;
+}
+
+.toDoItemActions .fa-save {
+    color: #28a745;
+}
+
+.toDoItemActions .fa-check-circle {
+    color: #17a2b8;
+}
+
+.toDoItemActions .fa-undo-alt {
+    color: #dc3545;
+}
+
+.toDoItemActions .fa-trash {
+    color: #e74c3c;
+}
+
+.status {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #555;
+}
+
+@media (max-width: 1200px) {
+    .toDoContainer {
+        max-width: 70%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .toDoContainer {
+        max-width: 60%;
+        padding: 18px;
+    }
+}
+
+@media (max-width: 768px) {
+    .toDoContainer {
+        max-width: 50%;
+        padding: 15px;
+    }
+
+    .toDoItem {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px;
+    }
+
+    .toDoItemActions {
+        width: 100%;
+        justify-content:center;
+    }
+
+    .toDoItemText {
+        font-size: 1rem;
+        max-width: 100%;
+    }
+
+    .editInput {
+        font-size: 1rem;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .toDoContainer {
+        max-width: 35%;
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .toDoItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .toDoItemActions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .toDoItemActions button {
+        font-size: 1.1rem;
+    }
+
+    .editInput {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .toDoContainer {
+        max-width: 30%;
+        padding: 10px;
+    }
+
+    .toDoItemText {
+        font-size: 0.9rem;
+    }
+
+    .editInput {
+        font-size: 0.85rem;
+    }
+}
