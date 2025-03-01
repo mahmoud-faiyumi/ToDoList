@@ -134,12 +134,14 @@
 }
 
 .filter-btn {
+    max-width: fit-content;
     padding: 0.625rem 1.5rem;
     border: none;
     border-radius: 0.5rem;
     background: transparent;
     color: var(--text-secondary);
     font-weight: 500;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -246,23 +248,18 @@
 
     .list-controls {
         flex-wrap: wrap;
-        justify-content: center;
+        justify-content: space-between;
+        max-width: fit-content;
         gap: 0.5rem;
         padding: 0.75rem;
     }
 
     .filter-btn {
         flex: 1 1 calc(33% - 0.5rem);
-        min-width: 120px;
     }
 }
 
 @media (max-width: 768px) {
-    .to-do-list-page {
-        margin-top: 70px;
-        padding: 0 1.5rem;
-        background-size: contain;
-    }
 
     .todo-title {
         font-size: 2rem;
@@ -328,20 +325,5 @@
 
     .list-title {
         font-size: 1.25rem;
-    }
-
-    .list-controls {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.25rem;
-        background: none;
-        padding: 0;
-    }
-
-    .filter-btn {
-        width: 100%;
-        padding: 0.75rem;
-        border-radius: 0.5rem;
-        font-size: 0.9rem;
     }
 }
