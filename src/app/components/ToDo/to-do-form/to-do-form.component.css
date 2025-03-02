@@ -62,7 +62,9 @@ h1 {
     }
 
     .addToDoButton {
-        width: 100%;
-        font-size: 1em;
+        width: auto;
+        font-size: 1.1em;
+        margin: auto;
+        padding: 15px 25px;
     }
 }

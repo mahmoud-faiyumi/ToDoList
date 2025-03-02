@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <div class="toDoContainer" [ngClass]="{'hidden': areAllItemsEmpty()}">
     <div class="toDoItem" *ngFor="let toDo of toDoItems; let i = index"
         [ngClass]="{'deleted': toDo.status === ToDoStatus.DONE, 'hidden': isItemEmpty(toDo)}">
@@ -24,7 +26,10 @@
             <button (click)="deleteItem(i)" title="Delete">
                 <i class="fas fa-trash"></i>
             </button>
-            <span class="status">{{ toDo.status }}</span>
-        </div>
+        
+            <span class="status">
+                <i [class]="getStatusIcon(toDo.status)" title="{{ toDo.status | titlecase }}"></i>
+            </span>             
+        </div>        
     </div>
 </div>
