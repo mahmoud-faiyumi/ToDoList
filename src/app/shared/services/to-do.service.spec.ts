@@ -112,4 +112,30 @@ describe('ToDoService', () => {
         const sorted = service.sortByPriority(service.items());
         expect(sorted[0].priority).toBe('urgent');
     });
+
+    it('removeBoardColumn moves tasks and enforces minimum column count', () => {
+        while (service.canAddBoardColumn()) {
+            service.addBoardColumn();
+        }
+        expect(service.boardColumns().length).toBe(5);
+
+        const customCol = service.boardColumns().find(col => col.id.startsWith('col_'));
+        expect(customCol).toBeTruthy();
+        service.add('orphan task', { boardColumnId: customCol!.id });
+
+        const removed = service.removeBoardColumn(customCol!.id);
+        expect(removed.ok).toBe(true);
+        expect(removed.movedCount).toBe(1);
+        expect(service.boardColumns().length).toBe(4);
+        expect(service.items().some(t => t.boardColumnId === customCol!.id)).toBe(false);
+
+        while (service.canRemoveBoardColumn()) {
+            const col = service.boardColumns()[0];
+            service.removeBoardColumn(col.id);
+        }
+
+        expect(service.boardColumns().length).toBe(2);
+        expect(service.removeBoardColumn(service.boardColumns()[0].id).ok).toBe(false);
+        expect(service.boardColumns().length).toBe(2);
+    });
 });

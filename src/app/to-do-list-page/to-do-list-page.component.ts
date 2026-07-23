@@ -7,7 +7,8 @@ import {
   BoardColumnDef,
   COLUMN_COLOR_OPTIONS,
   COLUMN_ICON_OPTIONS,
-  MAX_BOARD_COLUMNS
+  MAX_BOARD_COLUMNS,
+  MIN_BOARD_COLUMNS
 } from '../models/board-columns';
 import { ToDoFormComponent } from '../components/ToDo/to-do-form/to-do-form.component';
 import { AdvancedTaskFormComponent } from '../components/ToDo/advanced-task-form/advanced-task-form.component';
@@ -77,10 +78,13 @@ export class ToDoListPageComponent implements OnInit, OnDestroy {
   readonly boardColumns = this.toDoService.boardColumns;
   readonly connectedColumnIds = computed(() => this.toDoService.boardColumnIds());
   readonly canAddBoardColumn = this.toDoService.canAddBoardColumn;
+  readonly canRemoveBoardColumn = this.toDoService.canRemoveBoardColumn;
   readonly maxBoardColumns = MAX_BOARD_COLUMNS;
+  readonly minBoardColumns = MIN_BOARD_COLUMNS;
   readonly columnIconOptions = COLUMN_ICON_OPTIONS;
   readonly columnColorOptions = COLUMN_COLOR_OPTIONS;
   isColumnCustomizeOpen = false;
+  pendingDeleteColumnId: string | null = null;
   customizeColumnId: string | null = null;
   customizeDraft: { title: string; icon: string; color: string } = {
     title: '',
@@ -230,6 +234,67 @@ export class ToDoListPageComponent implements OnInit, OnDestroy {
     });
     this.closeColumnCustomize();
     this.showToast('Column updated');
+  }
+
+  canRemoveCurrentColumn(): boolean {
+    return this.canRemoveBoardColumn() && !!this.customizeColumnId;
+  }
+
+  customizeColumnTaskCount(): number {
+    if (!this.customizeColumnId) return 0;
+    return this.toDoService.getColumnTasks(this.customizeColumnId).length;
+  }
+
+  columnRemoveTargetTitle(): string | null {
+    if (!this.customizeColumnId) return null;
+    return this.toDoService.getColumnRemoveTarget(this.customizeColumnId)?.title ?? null;
+  }
+
+  requestColumnDelete(): void {
+    if (!this.customizeColumnId || !this.canRemoveCurrentColumn()) return;
+    this.pendingDeleteColumnId = this.customizeColumnId;
+  }
+
+  cancelColumnDelete(): void {
+    this.pendingDeleteColumnId = null;
+  }
+
+  confirmColumnDelete(): void {
+    if (!this.pendingDeleteColumnId) return;
+    const columnId = this.pendingDeleteColumnId;
+    const result = this.toDoService.removeBoardColumn(columnId);
+    this.pendingDeleteColumnId = null;
+
+    if (!result.ok) {
+      this.showToast(`Keep at least ${MIN_BOARD_COLUMNS} columns`);
+      return;
+    }
+
+    this.closeColumnCustomize();
+    this.ensureColumnBuffers();
+    this.applyFilter();
+    this.showToast(
+      result.movedCount > 0
+        ? `Column removed; ${result.movedCount} task(s) moved`
+        : 'Column removed'
+    );
+  }
+
+  pendingColumnDeleteTitle(): string {
+    if (!this.pendingDeleteColumnId) return 'this column';
+    return (
+      this.boardColumns().find(col => col.id === this.pendingDeleteColumnId)?.title ?? 'this column'
+    );
+  }
+
+  pendingColumnDeleteTaskCount(): number {
+    if (!this.pendingDeleteColumnId) return 0;
+    return this.toDoService.getColumnTasks(this.pendingDeleteColumnId).length;
+  }
+
+  pendingColumnDeleteTargetTitle(): string | null {
+    if (!this.pendingDeleteColumnId) return null;
+    return this.toDoService.getColumnRemoveTarget(this.pendingDeleteColumnId)?.title ?? null;
   }
 
   closeAddModal(): void {
@@ -646,7 +711,9 @@ export class ToDoListPageComponent implements OnInit, OnDestroy {
     }
 
     if (event.key === 'Escape') {
-      if (this.pendingDeleteId) {
+      if (this.pendingDeleteColumnId) {
+        this.cancelColumnDelete();
+      } else if (this.pendingDeleteId) {
         this.cancelPendingDelete();
       } else if (this.isSelectionMode) {
         this.toggleSelectionMode();

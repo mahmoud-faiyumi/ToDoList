@@ -7,6 +7,7 @@ import {
   DEFAULT_BOARD_COLUMN_ID,
   DONE_BOARD_COLUMN_ID,
   MAX_BOARD_COLUMNS,
+  MIN_BOARD_COLUMNS,
   cloneDefaultBoardColumns,
   createBoardColumnId,
   isAllowedColumnIcon,
@@ -31,6 +32,7 @@ export class ToDoService {
   readonly boardColumns = computed(() => this.columnsSignal());
   readonly boardColumnIds = computed(() => this.columnsSignal().map(col => col.id));
   readonly canAddBoardColumn = computed(() => this.columnsSignal().length < MAX_BOARD_COLUMNS);
+  readonly canRemoveBoardColumn = computed(() => this.columnsSignal().length > MIN_BOARD_COLUMNS);
   readonly totalCount = computed(() => this.itemsSignal().length);
   readonly doneCount = computed(() => this.itemsSignal().filter(t => t.status === ToDoStatus.DONE).length);
   readonly activeCount = computed(() => this.itemsSignal().filter(t => t.status === ToDoStatus.NEW || t.status === ToDoStatus.EDITED).length);
@@ -105,6 +107,58 @@ export class ToDoService {
         };
       })
     );
+  }
+
+  getColumnRemoveTarget(columnId: string): BoardColumnDef | null {
+    const cols = this.columnsSignal();
+    const idx = cols.findIndex(col => col.id === columnId);
+    if (idx === -1) return null;
+    const targetIdx = idx > 0 ? idx - 1 : idx + 1;
+    return cols[targetIdx] ?? null;
+  }
+
+  removeBoardColumn(columnId: string): { ok: boolean; movedCount: number; targetColumnId?: string } {
+    const cols = this.columnsSignal();
+    if (cols.length <= MIN_BOARD_COLUMNS) {
+      return { ok: false, movedCount: 0 };
+    }
+
+    const idx = cols.findIndex(col => col.id === columnId);
+    if (idx === -1) {
+      return { ok: false, movedCount: 0 };
+    }
+
+    const target = this.getColumnRemoveTarget(columnId);
+    if (!target) {
+      return { ok: false, movedCount: 0 };
+    }
+
+    const tasksToMove = this.getColumnTasks(columnId);
+    const now = new Date();
+    const items = this.itemsSignal().map(task => {
+      if (task.boardColumnId !== columnId) return task;
+
+      const moved: ToDo = {
+        ...task,
+        boardColumnId: target.id,
+        updatedAt: now
+      };
+
+      if (target.id === DONE_BOARD_COLUMN_ID) {
+        moved.status = ToDoStatus.DONE;
+        moved.completedAt = now;
+      } else if (columnId === DONE_BOARD_COLUMN_ID) {
+        moved.status = ToDoStatus.NEW;
+        moved.completedAt = undefined;
+      }
+
+      return moved;
+    });
+
+    this.itemsSignal.set(this.normalizeBoardRanks(items));
+    this.columnsSignal.set(cols.filter(col => col.id !== columnId));
+
+    return { ok: true, movedCount: tasksToMove.length, targetColumnId: target.id };
   }
 
   resetBoardColumns(): void {

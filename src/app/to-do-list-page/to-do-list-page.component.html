@@ -397,6 +397,28 @@
     </app-modal>
   }
 
+  @if (pendingDeleteColumnId) {
+    <app-modal title="Delete column?" (close)="cancelColumnDelete()">
+      <p style="margin: 0 0 0.75rem; color: var(--text-secondary);">
+        Remove <strong>{{ pendingColumnDeleteTitle() }}</strong> from the board?
+      </p>
+      @if (pendingColumnDeleteTaskCount() > 0 && pendingColumnDeleteTargetTitle()) {
+        <p style="margin: 0 0 1rem; color: var(--text-secondary);">
+          {{ pendingColumnDeleteTaskCount() }} task(s) will move to
+          <strong>{{ pendingColumnDeleteTargetTitle() }}</strong>.
+        </p>
+      } @else {
+        <p style="margin: 0 0 1rem; color: var(--text-secondary);">
+          At least {{ minBoardColumns }} columns must remain on the board.
+        </p>
+      }
+      <div class="modal-footer-actions">
+        <button type="button" class="btn btn-ghost" (click)="cancelColumnDelete()">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="confirmColumnDelete()">Delete column</button>
+      </div>
+    </app-modal>
+  }
+
   @if (isColumnCustomizeOpen) {
     <app-modal
       title="Edit column"
@@ -496,10 +518,22 @@
         </div>
 
         <div class="column-editor__footer">
-          <button type="button" class="btn btn-ghost" (click)="closeColumnCustomize()">Cancel</button>
-          <button type="button" class="btn btn-primary" (click)="saveColumnCustomize()">
-            Save column
-          </button>
+          @if (canRemoveCurrentColumn()) {
+            <button
+              type="button"
+              class="btn btn-danger column-editor__delete"
+              (click)="requestColumnDelete()">
+              Delete column
+            </button>
+          } @else {
+            <span class="column-editor__footer-spacer" aria-hidden="true"></span>
+          }
+          <div class="column-editor__footer-actions">
+            <button type="button" class="btn btn-ghost" (click)="closeColumnCustomize()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="saveColumnCustomize()">
+              Save column
+            </button>
+          </div>
         </div>
       </div>
     </app-modal>

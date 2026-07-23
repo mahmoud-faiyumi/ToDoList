@@ -6,6 +6,7 @@ export interface BoardColumnDef {
 }
 
 export const MAX_BOARD_COLUMNS = 5;
+export const MIN_BOARD_COLUMNS = 2;
 
 export const BOARD_COLUMNS: BoardColumnDef[] = [
   { id: 'todo', title: 'To Do', icon: 'fa-circle-dot', color: '#0d9488' },

@@ -1194,14 +1194,30 @@
 
 .column-editor__footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.55rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin-top: 0.85rem;
   padding: 0.9rem 1.15rem 1.15rem;
   border-top: 1px solid var(--muted-color);
   background: color-mix(in srgb, var(--background-color) 45%, transparent);
   position: sticky;
   bottom: 0;
+}
+
+.column-editor__footer-spacer {
+  flex: 1 1 auto;
+}
+
+.column-editor__footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.column-editor__delete {
+  flex-shrink: 0;
 }
 
 @keyframes columnPreviewIn {
