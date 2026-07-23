@@ -1,40 +1,507 @@
-<div class="to-do-list-page">
-    <div class="todo-header">
-        <div class="header-content">
-            <h1 class="todo-title">Task Management System</h1>
-            <p class="todo-subtitle">Achieve More with Organized Productivity</p>
+<div class="to-do-list-page board-page">
+  <header class="app-topbar">
+    <div class="app-topbar__inner">
+      <div class="app-topbar__brand">
+        <span class="app-topbar__mark" aria-hidden="true">
+          <i class="fas fa-layer-group"></i>
+        </span>
+        <div class="app-topbar__identity">
+          <h1 class="app-topbar__title">FlowBoard</h1>
+          <p class="app-topbar__subtitle">Personal kanban · local-first</p>
         </div>
-        <div class="header-graphic">
-            <div class="graphic-circle"></div>
-            <div class="graphic-bar"></div>
+      </div>
+
+      <nav class="app-topbar__nav" aria-label="Primary">
+        <div class="app-nav-tabs" role="tablist" aria-label="Views">
+          <a
+            routerLink="/"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="app-nav-tabs__link"
+            role="tab">
+            Board
+          </a>
+          <a routerLink="/dashboard" routerLinkActive="is-active" class="app-nav-tabs__link" role="tab">
+            Dashboard
+          </a>
         </div>
+
+        <div class="app-topbar__tools">
+          <button type="button" class="app-tool-btn" (click)="exportTasks()" title="Export JSON">
+            <i class="fas fa-download" aria-hidden="true"></i>
+            <span>Export</span>
+          </button>
+          <label class="app-tool-btn" title="Import JSON">
+            <i class="fas fa-upload" aria-hidden="true"></i>
+            <span>Import</span>
+            <input type="file" accept="application/json,.json" class="sr-only" (change)="onImportFileSelected($event)" />
+          </label>
+          <button
+            type="button"
+            class="app-icon-btn"
+            (click)="toggleTheme()"
+            [attr.aria-label]="currentTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'">
+            <i class="fas" [class.fa-sun]="currentTheme === 'dark'" [class.fa-moon]="currentTheme !== 'dark'" aria-hidden="true"></i>
+          </button>
+        </div>
+      </nav>
     </div>
 
-    <div class="todo-main-content">
-        <section class="todo-form-section">
-            <div class="form-container">
-                <app-to-do-form (toDoAdd)="toDoAddHandler($event)"></app-to-do-form>
-            </div>
-        </section>
+    @if (importMessage) {
+      <p class="app-topbar__status" role="status">{{ importMessage }}</p>
+    }
 
-        <section class="todo-list-section">
-            <div class="list-header">
-                <div class="list-title-group">
-                    <h2 class="list-title">Task Overview</h2>
-                    <span class="task-counter">{{ toDoItems.length }} items</span>
-                </div>
-                <nav class="list-controls">
-                    <button class="filter-btn" [class.active]="filter === 'All'" (click)="setFilter('All')">All</button>
-                    <button class="filter-btn" [class.active]="filter === 'Active'"
-                        (click)="setFilter('Active')">Active</button>
-                    <button class="filter-btn" [class.active]="filter === 'Done'"
-                        (click)="setFilter('Done')">Completed</button>
-                </nav>
-            </div>
+    @if (totalCount > 0) {
+      <div class="app-progress" role="status" aria-live="polite">
+        <div class="app-progress__stats">
+          <span class="app-progress__stat"><strong>{{ doneCount }}</strong> done</span>
+          <span class="app-progress__stat"><strong>{{ activeCount }}</strong> active</span>
+          <span class="app-progress__stat"><strong>{{ totalCount }}</strong> total</span>
+        </div>
+        <div class="app-progress__meter" aria-hidden="true">
+          <div class="app-progress__fill" [style.width.%]="completionPercent"></div>
+        </div>
+        <span class="app-progress__pct">{{ completionPercent }}%</span>
+      </div>
+    }
+  </header>
 
-            <div class="list-container">
-                <app-to-do-list [toDoItems]="filteredItems"></app-to-do-list>
+  <section class="board-main">
+    @if (totalCount === 0) {
+      <div class="board-empty glass-panel">
+        <div class="board-empty__icon" aria-hidden="true">
+          <i class="fas fa-layer-group"></i>
+        </div>
+        <h2>Start your board</h2>
+        <p>Add a task, or load a few sample cards to explore drag-and-drop, filters, and the dashboard.</p>
+        <div class="board-empty__actions">
+          <button type="button" class="btn btn-primary" (click)="isAddOpen = true">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            Quick add
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="isAdvancedAddOpen = true">
+            <i class="fas fa-plus-circle" aria-hidden="true"></i>
+            Advanced
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="loadDemoBoard()">
+            <i class="fas fa-magic" aria-hidden="true"></i>
+            Try sample board
+          </button>
+        </div>
+        <div class="board-empty__hints">
+          <span><kbd>Ctrl</kbd> + <kbd>N</kbd> quick add</span>
+          <span><kbd>Ctrl</kbd> + <kbd>/</kbd> theme</span>
+        </div>
+      </div>
+    } @else {
+      <div class="board-quick">
+        <div class="board-quick__primary">
+          <button type="button" class="board-cta board-cta--primary" (click)="isAddOpen = true">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            Quick add
+          </button>
+          <button type="button" class="board-cta board-cta--secondary" (click)="isAdvancedAddOpen = true">
+            <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+            Advanced
+          </button>
+        </div>
+
+        <div class="board-quick__divider" aria-hidden="true"></div>
+
+        <div class="board-templates" role="group" aria-label="Quick templates">
+          <span class="board-templates__label">Templates</span>
+          <button type="button" class="board-chip" (click)="createTemplateTask('work')">
+            <i class="fas fa-briefcase" aria-hidden="true"></i>
+            Work
+          </button>
+          <button type="button" class="board-chip" (click)="createTemplateTask('personal')">
+            <i class="fas fa-user" aria-hidden="true"></i>
+            Personal
+          </button>
+          <button type="button" class="board-chip" (click)="createTemplateTask('shopping')">
+            <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+            Shopping
+          </button>
+          <button type="button" class="board-chip" (click)="createTemplateTask('health')">
+            <i class="fas fa-heart" aria-hidden="true"></i>
+            Health
+          </button>
+        </div>
+      </div>
+
+      <div class="board-controls">
+        <div class="board-toolbar-bar" role="toolbar" aria-label="Board filters">
+          <div class="board-search">
+            <i class="fas fa-search board-search__icon" aria-hidden="true"></i>
+            <input
+              type="search"
+              class="board-search__input"
+              placeholder="Search tasks…"
+              aria-label="Search tasks"
+              [(ngModel)]="searchQuery"
+              (input)="onSearchChange()" />
+            @if (searchQuery.trim()) {
+              <button type="button" class="board-search__clear" (click)="searchQuery = ''; onSearchChange()" aria-label="Clear search">
+                <i class="fas fa-times" aria-hidden="true"></i>
+              </button>
+            }
+          </div>
+
+          <div class="board-segment" role="group" aria-label="Status filter">
+            <button type="button" class="board-segment__btn" [class.is-active]="filter === 'All'" (click)="setFilter('All')">
+              All <span class="board-segment__count">{{ totalCount }}</span>
+            </button>
+            <button type="button" class="board-segment__btn" [class.is-active]="filter === 'Active'" (click)="setFilter('Active')">
+              Active <span class="board-segment__count">{{ activeCount }}</span>
+            </button>
+            <button type="button" class="board-segment__btn" [class.is-active]="filter === 'Done'" (click)="setFilter('Done')">
+              Done <span class="board-segment__count">{{ doneCount }}</span>
+            </button>
+          </div>
+
+          <div class="board-field">
+            <label class="board-field__label" for="sort-select">Sort</label>
+            <select id="sort-select" class="board-field__select" [(ngModel)]="sortBy" (change)="setSortBy(sortBy)" aria-label="Sort tasks within columns">
+              <option value="created">Created</option>
+              <option value="priority">Priority</option>
+              <option value="dueDate">Due date</option>
+            </select>
+          </div>
+
+          <div class="board-field">
+            <label class="board-field__label" for="filter-adv">Narrow</label>
+            <select id="filter-adv" class="board-field__select" [(ngModel)]="filterBy" (change)="setFilterBy(filterBy)" aria-label="Narrow by date or priority">
+              <option value="all">All</option>
+              <option value="overdue">Overdue</option>
+              <option value="dueToday">Due today</option>
+              <option value="highPriority">High priority</option>
+            </select>
+          </div>
+
+          <div class="board-toolbar-actions">
+            <button
+              type="button"
+              class="board-icon-btn"
+              [class.is-active]="isSelectionMode"
+              (click)="toggleSelectionMode()"
+              [attr.aria-pressed]="isSelectionMode"
+              [attr.aria-label]="isSelectionMode ? 'Exit selection mode' : 'Enter selection mode'"
+              [title]="isSelectionMode ? 'Exit select' : 'Select'">
+              <i class="fas" [class.fa-times]="isSelectionMode" [class.fa-check-square]="!isSelectionMode" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="board-icon-btn" (click)="refreshTasks()" aria-label="Refresh" title="Refresh">
+              <i class="fas fa-sync-alt" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        @if (isBoardDragDisabled()) {
+          <p class="board-drag-hint">Clear search and set filters to <strong>All</strong> to drag cards between columns.</p>
+        }
+        @if (filteredItems.length === 0) {
+          <p class="board-filter-empty" role="status">No tasks match these filters. Try clearing search or switching to All.</p>
+        }
+      </div>
+
+      @if (isSelectionMode && selectedCount > 0) {
+        <div class="bulk-actions glass-panel">
+          <span>{{ selectedCount }} selected</span>
+          <div class="bulk-buttons">
+            <button type="button" class="btn btn-ghost" (click)="selectAll()">Select all</button>
+            <button type="button" class="btn btn-ghost" (click)="clearSelection()">Clear</button>
+            <button type="button" class="btn btn-danger" (click)="deleteSelected()">
+              <i class="fas fa-trash" aria-hidden="true"></i> Delete
+            </button>
+          </div>
+        </div>
+      }
+
+      <div
+        class="board-row"
+        cdkDropListGroup
+        [style.--board-cols]="boardColumns().length + (canAddBoardColumn() ? 1 : 0)">
+        @for (col of boardColumns(); track col.id) {
+          <app-board-column
+            [column]="col"
+            [tasks]="columnBuffers[col.id] || []"
+            [connectedTo]="connectedColumnIds()"
+            [dropListDisabled]="isBoardDragDisabled()"
+            [isSelectionMode]="isSelectionMode"
+            [selectedIds]="selectedTaskIds"
+            (dropped)="onColumnDrop($event)"
+            (edit)="onEditRequested($event)"
+            (toggleDone)="onToggleFromCard($event)"
+            (delete)="onDeleteFromCard($event)"
+            (selectionChange)="toggleTaskSelection($event)"
+            (addRequested)="onColumnAdd($event)"
+            (customizeRequested)="onColumnCustomize($event)" />
+        }
+        @if (canAddBoardColumn()) {
+          <button
+            type="button"
+            class="board-add-column"
+            (click)="onAddBoardColumn()"
+            [attr.aria-label]="'Add column (' + boardColumns().length + ' of ' + maxBoardColumns + ')'">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            <span>Add column</span>
+            <small>{{ boardColumns().length }}/{{ maxBoardColumns }}</small>
+          </button>
+        }
+      </div>
+
+      <p class="board-shortcuts" aria-label="Keyboard shortcuts">
+        <span><kbd>Ctrl</kbd>+<kbd>N</kbd> add</span>
+        <span><kbd>Ctrl</kbd>+<kbd>/</kbd> theme</span>
+        <span><kbd>Esc</kbd> close / exit select</span>
+        <span>Drag cards between columns</span>
+      </p>
+    }
+
+    <div class="bottom-spacer"></div>
+  </section>
+
+  @if (toastMessage) {
+    <div class="app-toast" role="status" aria-live="polite">{{ toastMessage }}</div>
+  }
+
+  @if (isAddOpen) {
+    <app-modal
+      title="Quick add"
+      [subtitle]="pendingAddColumnTitle() ?? 'Capture a task and keep moving.'"
+      size="sm"
+      [flushBody]="true"
+      (close)="closeAddModal()">
+      <app-to-do-form
+        [targetColumn]="pendingAddColumnTitle()"
+        (toDoAdd)="toDoAddHandler($event)" />
+    </app-modal>
+  }
+
+  @if (isAdvancedAddOpen) {
+    <app-modal
+      title="Advanced task"
+      [subtitle]="pendingAddColumnTitle() ?? 'Compose a full board card with live preview.'"
+      size="lg"
+      [flushBody]="true"
+      (close)="isAdvancedAddOpen = false">
+      <app-advanced-task-form
+        [targetColumn]="pendingAddColumnTitle()"
+        (taskCreated)="advancedTaskCreated($event)" />
+    </app-modal>
+  }
+
+  @if (isEditOpen) {
+    <app-modal title="Edit task" (close)="cancelEdit()">
+      <div class="field">
+        <label for="edit-title">Title</label>
+        <input id="edit-title" class="input" appStripNgClasses type="text" [(ngModel)]="editDraft!.toDoItemText" placeholder="Task title" />
+      </div>
+      <div class="field">
+        <label>Quick color</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          @for (c of presetColors; track c) {
+            <button type="button" class="color-swatch" (click)="applyPresetColor(c)" [style.background]="c" [class.selected]="editDraft!.color === c" title="Apply color"></button>
+          }
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Shape</label>
+          <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+            @for (s of presetShapes; track s) {
+              <button type="button" class="shape-chip" [class.selected]="editDraft!.shape === s" (click)="applyPresetShape(s)" [title]="shapeLabels[s]">
+                {{ getShapeEmoji(s) }} {{ shapeLabels[s] }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="edit-notes">Notes</label>
+        <textarea id="edit-notes" class="textarea" [(ngModel)]="editDraft!.notes" rows="3" placeholder="Add notes or instructions..."></textarea>
+      </div>
+      <div class="field-row edit-field-row">
+        <div class="field">
+          <label for="edit-priority">Priority</label>
+          <select id="edit-priority" class="input" [(ngModel)]="editDraft!.priority">
+            <option [ngValue]="undefined">None</option>
+            @for (p of editPriorities; track p.value) {
+              <option [ngValue]="p.value">{{ p.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="edit-category">Category</label>
+          <select id="edit-category" class="input" [(ngModel)]="editDraft!.category">
+            <option [ngValue]="undefined">None</option>
+            @for (c of editCategories; track c.value) {
+              <option [ngValue]="c.value">{{ c.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="field-row edit-field-row">
+        <div class="field">
+          <label for="edit-due">Due date</label>
+          <input id="edit-due" class="input" type="datetime-local" [(ngModel)]="editDueDateLocal" [min]="getMinDateForEdit()" />
+        </div>
+        <div class="field">
+          <label for="edit-est">Estimated time (minutes)</label>
+          <input id="edit-est" class="input" type="number" [(ngModel)]="editDraft!.estimatedTime" min="0" max="480" step="5" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="edit-actual">Actual time (minutes)</label>
+        <input id="edit-actual" class="input" type="number" [(ngModel)]="editDraft!.actualTime" min="0" max="480" step="5" />
+      </div>
+      <div class="field">
+        <label for="edit-tag">Tags</label>
+        <div class="tags-edit-row">
+          <input id="edit-tag" class="input" type="text" [(ngModel)]="editTagInput" (keydown.enter)="addEditTag(); $event.preventDefault()" placeholder="Add a tag" maxlength="20" />
+          <button type="button" class="btn btn-secondary" (click)="addEditTag()">Add tag</button>
+        </div>
+        @if (editDraft!.tags?.length) {
+          <div class="edit-tags-list">
+            @for (tag of editDraft!.tags; track tag) {
+              <span class="edit-tag">{{ tag }}<button type="button" class="tag-remove" (click)="removeEditTag(tag)" [attr.aria-label]="'Remove tag ' + tag">×</button></span>
+            }
+          </div>
+        }
+      </div>
+      <div class="field">
+        <label>Live preview</label>
+        <div class="card" [style.background]="getBackgroundWithOpacity(editDraft!.color) || 'var(--surface-color)'" style="display:flex; align-items:center; gap:8px;">
+          <span>{{ editDraft!.shape ? getShapeEmoji(editDraft!.shape!) : '' }}</span>
+          <div>
+            <div style="font-weight:600;">{{ editDraft!.toDoItemText || 'Untitled task' }}</div>
+            @if (editDraft!.notes) {
+              <div style="color: var(--text-secondary); font-size: 0.9rem;">{{ editDraft!.notes }}</div>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer-actions">
+        <button type="button" class="btn btn-ghost" (click)="cancelEdit()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="saveEdit()" [disabled]="!hasEditChanges()">Save changes</button>
+      </div>
+    </app-modal>
+  }
+
+  @if (pendingDeleteId) {
+    <app-modal title="Delete task?" (close)="cancelPendingDelete()">
+      <p style="margin: 0 0 1rem; color: var(--text-secondary);">This removes the task permanently from this device.</p>
+      <div class="modal-footer-actions">
+        <button type="button" class="btn btn-ghost" (click)="cancelPendingDelete()">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="confirmPendingDelete()">Delete</button>
+      </div>
+    </app-modal>
+  }
+
+  @if (isColumnCustomizeOpen) {
+    <app-modal
+      title="Edit column"
+      subtitle="Rename it, pick an icon, and set the accent."
+      size="sm"
+      [flushBody]="true"
+      (close)="closeColumnCustomize()">
+      <div class="column-editor" [style.--editor-accent]="customizeDraft.color">
+        <div class="column-editor__stage">
+          <div class="column-editor__stage-label">
+            <span>Live preview</span>
+            <span class="column-editor__stage-hex">{{ customizeDraft.color }}</span>
+          </div>
+
+          <div class="column-editor__preview" aria-hidden="true">
+            <div class="column-editor__preview-bar">
+              <span class="column-editor__preview-icon">
+                <i class="fas {{ customizeDraft.icon }}"></i>
+              </span>
+              <span class="column-editor__preview-title">{{ customizeDraft.title || 'Column name' }}</span>
+              <span class="column-editor__preview-count">3</span>
+              <span class="column-editor__preview-actions">
+                <span class="column-editor__preview-action"><i class="fas fa-pen"></i></span>
+                <span class="column-editor__preview-action"><i class="fas fa-plus"></i></span>
+              </span>
             </div>
-        </section>
-    </div>
+            <div class="column-editor__preview-body">
+              <div class="column-editor__preview-card">
+                <span class="column-editor__preview-card-line"></span>
+                <span class="column-editor__preview-card-line column-editor__preview-card-line--short"></span>
+              </div>
+              <div class="column-editor__preview-card column-editor__preview-card--faded">
+                <span class="column-editor__preview-card-line"></span>
+                <span class="column-editor__preview-card-line column-editor__preview-card-line--short"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="column-editor__body">
+          <div class="column-editor__field">
+            <label for="column-title">Display name</label>
+            <input
+              id="column-title"
+              class="column-editor__input"
+              type="text"
+              maxlength="40"
+              [(ngModel)]="customizeDraft.title"
+              placeholder="e.g. In Progress"
+              autocomplete="off" />
+          </div>
+
+          <section class="column-editor__section" aria-labelledby="column-icons-label">
+            <div class="column-editor__section-head">
+              <h4 id="column-icons-label">Icon</h4>
+              <span>20 choices</span>
+            </div>
+            <div class="column-icon-grid" role="listbox" aria-label="Column icons">
+              @for (icon of columnIconOptions; track icon) {
+                <button
+                  type="button"
+                  class="column-icon-option"
+                  role="option"
+                  [class.selected]="customizeDraft.icon === icon"
+                  [attr.aria-selected]="customizeDraft.icon === icon"
+                  [attr.aria-label]="icon"
+                  (click)="selectColumnIcon(icon)">
+                  <i class="fas {{ icon }}" aria-hidden="true"></i>
+                </button>
+              }
+            </div>
+          </section>
+
+          <section class="column-editor__section" aria-labelledby="column-colors-label">
+            <div class="column-editor__section-head">
+              <h4 id="column-colors-label">Accent</h4>
+              <span class="column-editor__hex">{{ customizeDraft.color }}</span>
+            </div>
+            <div class="column-color-grid" role="listbox" aria-label="Column colors">
+              @for (color of columnColorOptions; track color) {
+                <button
+                  type="button"
+                  class="column-color-swatch"
+                  role="option"
+                  [class.selected]="customizeDraft.color === color"
+                  [attr.aria-selected]="customizeDraft.color === color"
+                  [style.--swatch]="color"
+                  [attr.aria-label]="'Color ' + color"
+                  (click)="selectColumnColor(color)">
+                  @if (customizeDraft.color === color) {
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                  }
+                </button>
+              }
+            </div>
+          </section>
+        </div>
+
+        <div class="column-editor__footer">
+          <button type="button" class="btn btn-ghost" (click)="closeColumnCustomize()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="saveColumnCustomize()">
+            Save column
+          </button>
+        </div>
+      </div>
+    </app-modal>
+  }
 </div>

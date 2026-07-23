@@ -1,0 +1,51 @@
+<div
+  class="board-column"
+  [style.--column-accent]="accentColor()"
+  [attr.aria-labelledby]="'col-title-' + column().id"
+  role="region">
+  <header class="board-column__header">
+    <div class="board-column__title-row">
+      <i class="fas {{ column().icon }}" aria-hidden="true"></i>
+      <h2 class="board-column__title" [id]="'col-title-' + column().id">{{ column().title }}</h2>
+      <span class="board-column__count">{{ tasks().length }}</span>
+      <button
+        type="button"
+        class="board-column__customize"
+        (click)="onCustomize()"
+        [attr.aria-label]="'Customize ' + column().title"
+        title="Rename, icon & color">
+        <i class="fas fa-pen" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="board-column__add"
+        (click)="onAdd()"
+        [attr.aria-label]="'Add task to ' + column().title"
+        title="Add task">
+        <i class="fas fa-plus" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+  <div
+    class="board-column__list"
+    cdkDropList
+    [id]="column().id"
+    [cdkDropListData]="tasks()"
+    [cdkDropListConnectedTo]="connectedTo()"
+    [cdkDropListDisabled]="dropListDisabled()"
+    (cdkDropListDropped)="onDrop($event)">
+    @for (task of tasks(); track task.id) {
+      <app-issue-card
+        [task]="task"
+        [isSelectionMode]="isSelectionMode()"
+        [selected]="isSelected(task.id)"
+        (edit)="edit.emit($event)"
+        (toggleDone)="toggleDone.emit($event)"
+        (delete)="delete.emit($event)"
+        (selectionChange)="selectionChange.emit($event)" />
+    }
+    @if (tasks().length === 0) {
+      <p class="board-column__empty">Drop cards here</p>
+    }
+  </div>
+</div>

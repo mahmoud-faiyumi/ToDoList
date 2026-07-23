@@ -1,0 +1,202 @@
+@if (isVisible()) {
+  <div class="dashboard glass-panel">
+    <div class="dashboard-header">
+      <h2 class="dashboard-title">
+        <i class="fas fa-chart-line" aria-hidden="true"></i>
+        Productivity
+      </h2>
+      @if (stats().totalTasks === 0) {
+        <p class="dashboard-empty-hint">Add tasks on the board to see live stats here.</p>
+      }
+    </div>
+    <div class="dashboard-grid">
+      <div class="dashboard-card score-card" [attr.data-tone]="productivityLevel().tone">
+        <div class="score-card__top">
+          <div class="score-card__heading">
+            <p class="score-card__eyebrow">Overview</p>
+            <h3>Productivity score</h3>
+          </div>
+          <div class="score-badge" [style.--badge-color]="productivityLevel().color">
+            <i [class]="'fas ' + productivityLevel().icon" aria-hidden="true"></i>
+            {{ productivityLevel().level }}
+          </div>
+        </div>
+
+        <div class="score-card__body">
+          <div class="score-ring" [style.background]="scoreRingStyle().background" role="img" [attr.aria-label]="'Score ' + productivityScore() + ' out of 100'">
+            <div class="score-ring__inner">
+              <span class="score-number">{{ productivityScore() }}</span>
+              <span class="score-label">out of 100</span>
+            </div>
+          </div>
+
+          <div class="score-meta">
+            <div class="score-factors">
+              <div class="score-factor">
+                <div class="score-factor__row">
+                  <span>Completion</span>
+                  <strong>{{ scoreBreakdown().completionShare }}%</strong>
+                </div>
+                <div class="score-factor__track" aria-hidden="true">
+                  <span class="score-factor__fill score-factor__fill--ok" [style.width.%]="scoreBreakdown().completionShare"></span>
+                </div>
+                <p class="score-factor__hint">
+                  @if (scoreBreakdown().totalTasks === 0) {
+                    No tasks yet — add a few to start tracking
+                  } @else {
+                    {{ scoreBreakdown().completedTasks }} of {{ scoreBreakdown().totalTasks }} done
+                  }
+                </p>
+              </div>
+
+              <div class="score-factor">
+                <div class="score-factor__row">
+                  <span>Overdue drag</span>
+                  <strong>{{ scoreBreakdown().overdueTasks }}</strong>
+                </div>
+                <div class="score-factor__track" aria-hidden="true">
+                  <span class="score-factor__fill score-factor__fill--warn" [style.width.%]="scoreBreakdown().overdueShare"></span>
+                </div>
+                <p class="score-factor__hint">{{ scoreBreakdown().overdueTasks === 0 ? 'No overdue tasks' : 'Clear overdue items to lift score' }}</p>
+              </div>
+            </div>
+
+            <p class="score-tip">
+              <i class="fas fa-lightbulb" aria-hidden="true"></i>
+              {{ productivityLevel().tip }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-card stats-card">
+        <div class="card-header">
+          <h3>Quick Stats</h3>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value">{{ stats().totalTasks }}</div>
+            <div class="stat-label">Total Tasks</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ stats().completedTasks }}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ completionRate() }}%</div>
+            <div class="stat-label">Completion Rate</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ averageCompletionTimeFormatted() }}</div>
+            <div class="stat-label">Avg. Time</div>
+          </div>
+        </div>
+      </div>
+
+      @if (overdueTasks().length > 0) {
+        <div class="dashboard-card overdue-card">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-exclamation-triangle" style="color: #ef4444;" aria-hidden="true"></i>
+              Overdue Tasks
+            </h3>
+            <span class="badge badge-danger">{{ overdueTasks().length }}</span>
+          </div>
+          <div class="task-list">
+            @for (task of overdueTasks(); track task.id) {
+              <div class="task-item overdue">
+                <div class="task-content">
+                  <div class="task-title">{{ task.toDoItemText }}</div>
+                  <div class="task-meta">
+                    <span class="due-date">
+                      <i class="fas fa-calendar-times" aria-hidden="true"></i>
+                      Due: {{ formatDate(task.dueDate!) }}
+                    </span>
+                    @if (task.priority) {
+                      <span class="priority">
+                        <i [class]="'fas ' + getPriorityIcon(task.priority)"></i>
+                        {{ task.priority }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (tasksDueToday().length > 0) {
+        <div class="dashboard-card today-card">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-calendar-day" style="color: #f59e0b;" aria-hidden="true"></i>
+              Due Today
+            </h3>
+            <span class="badge badge-warning">{{ tasksDueToday().length }}</span>
+          </div>
+          <div class="task-list">
+            @for (task of tasksDueToday(); track task.id) {
+              <div class="task-item today">
+                <div class="task-content">
+                  <div class="task-title">{{ task.toDoItemText }}</div>
+                  <div class="task-meta">
+                    <span class="due-date">
+                      <i class="fas fa-clock" aria-hidden="true"></i>
+                      {{ formatDate(task.dueDate!) }}
+                    </span>
+                    @if (task.priority) {
+                      <span class="priority">
+                        <i [class]="'fas ' + getPriorityIcon(task.priority)"></i>
+                        {{ task.priority }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="dashboard-card priority-card">
+        <div class="card-header">
+          <h3>Priority Distribution</h3>
+        </div>
+        <div class="priority-chart">
+          <div class="priority-bar urgent" [style.width.%]="priorityWidth(tasksByPriority().urgent)">
+            <span class="priority-label">Urgent ({{ tasksByPriority().urgent }})</span>
+          </div>
+          <div class="priority-bar high" [style.width.%]="priorityWidth(tasksByPriority().high)">
+            <span class="priority-label">High ({{ tasksByPriority().high }})</span>
+          </div>
+          <div class="priority-bar medium" [style.width.%]="priorityWidth(tasksByPriority().medium)">
+            <span class="priority-label">Medium ({{ tasksByPriority().medium }})</span>
+          </div>
+          <div class="priority-bar low" [style.width.%]="priorityWidth(tasksByPriority().low)">
+            <span class="priority-label">Low ({{ tasksByPriority().low }})</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-card category-card">
+        <div class="card-header">
+          <h3>Category Distribution</h3>
+        </div>
+        <div class="category-chart">
+          @for (category of getCategoriesWithTasks(); track category) {
+            <div class="category-item">
+              <div class="category-info">
+                <i [class]="'fas ' + getCategoryIcon(category)"></i>
+                <span class="category-name">{{ category | titlecase }}</span>
+              </div>
+              <div class="category-count">{{ tasksByCategory()[category] }}</div>
+            </div>
+          } @empty {
+            <p class="category-empty">No categorized tasks yet.</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

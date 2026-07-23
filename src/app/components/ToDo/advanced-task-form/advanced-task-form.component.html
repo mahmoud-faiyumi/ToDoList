@@ -1,0 +1,365 @@
+<div class="adv-form" [style.--adv-accent]="color()" [style.--adv-complete]="completeness() + '%'">
+  <div class="adv-form__layout">
+    <aside class="adv-form__rail">
+      @if (targetColumn()) {
+        <div class="adv-form__target">
+          <i class="fas fa-columns" aria-hidden="true"></i>
+          <span>Adding to <strong>{{ targetColumn() }}</strong></span>
+        </div>
+      }
+
+      <div class="adv-rail__shell">
+        <div class="adv-rail__inner">
+          <div class="adv-rail__head">
+            <div>
+              <p class="adv-rail__eyebrow">Preview</p>
+              <h4 class="adv-rail__title">Board card</h4>
+            </div>
+            <div class="adv-complete" [attr.aria-label]="'Completeness ' + completeness() + ' percent'">
+              <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="adv-complete__track" cx="18" cy="18" r="15.5"></circle>
+                <circle
+                  class="adv-complete__value"
+                  cx="18"
+                  cy="18"
+                  r="15.5"
+                  [style.stroke-dasharray]="completeness() + ', 100'"></circle>
+              </svg>
+              <span>{{ completeness() }}%</span>
+            </div>
+          </div>
+
+          <p class="adv-rail__status">{{ completenessLabel() }}</p>
+
+          <div class="adv-column-frame">
+            <div class="adv-column-frame__bar">
+              <i class="fas fa-layer-group" aria-hidden="true"></i>
+              <span>{{ targetColumn() || 'New task' }}</span>
+              <span class="adv-column-frame__count">1</span>
+            </div>
+
+            <article class="adv-card" aria-hidden="true">
+              <div class="adv-card__accent"></div>
+              <div class="adv-card__grip"><i class="fas fa-grip-vertical"></i></div>
+              <div class="adv-card__body">
+                <div class="adv-card__top">
+                  <span class="adv-card__key">TASK-NEW</span>
+                  <span class="adv-card__shape">{{ selectedShape().emoji }}</span>
+                </div>
+                <p class="adv-card__title">{{ previewTitle() }}</p>
+                @if (notes().trim()) {
+                  <p class="adv-card__notes">{{ notes() }}</p>
+                }
+                <div class="adv-card__meta">
+                  <span class="adv-meta adv-meta--{{ priority() }}">
+                    <i class="fas {{ selectedPriority().icon }}"></i>
+                    {{ selectedPriority().label }}
+                  </span>
+                  <span class="adv-meta adv-meta--category">
+                    <i class="fas {{ selectedCategory().icon }}"></i>
+                    {{ selectedCategory().label }}
+                  </span>
+                  @if (previewDueLabel(); as dueLabel) {
+                    <span class="adv-meta adv-meta--due">
+                      <i class="fas fa-calendar"></i>
+                      {{ dueLabel }}
+                    </span>
+                  }
+                  @if (estimatedTime() > 0) {
+                    <span class="adv-meta">
+                      <i class="fas fa-clock"></i>
+                      {{ estimatedTime() }}m
+                    </span>
+                  }
+                </div>
+                @if (tags().length > 0) {
+                  <div class="adv-card__tags">
+                    @for (tag of tags(); track tag) {
+                      <span>{{ tag }}</span>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="adv-card__actions">
+                <span><i class="fas fa-pen"></i></span>
+                <span><i class="fas fa-check"></i></span>
+              </div>
+            </article>
+          </div>
+
+          <ul class="adv-rail__checklist">
+            <li [class.done]="!!taskText().trim()"><i class="fas fa-check"></i> Title</li>
+            <li [class.done]="!!notes().trim()"><i class="fas fa-check"></i> Notes</li>
+            <li [class.done]="!!dueDate()"><i class="fas fa-check"></i> Due date</li>
+            <li [class.done]="tags().length > 0"><i class="fas fa-check"></i> Tags</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <div class="adv-form__workspace">
+      <div class="adv-form__body">
+        <section class="adv-panel">
+          <header class="adv-panel__head">
+            <div class="adv-panel__identity">
+              <span class="adv-step">01</span>
+              <div>
+                <h4>Basics</h4>
+                <p>Title, notes, priority, category</p>
+              </div>
+            </div>
+          </header>
+
+          <div class="adv-form__field">
+            <div class="adv-form__label-row">
+              <label for="adv-title">Title</label>
+              <span class="adv-form__count" [class.adv-form__count--hot]="titleLength() > 160">
+                {{ titleLength() }}/200
+              </span>
+            </div>
+            <input
+              id="adv-title"
+              class="adv-form__input adv-form__input--title"
+              appStripNgClasses
+              type="text"
+              [ngModel]="taskText()"
+              (ngModelChange)="taskText.set($event)"
+              placeholder="What needs to be done?"
+              maxlength="200"
+              autocomplete="off" />
+          </div>
+
+          <div class="adv-form__field">
+            <label for="adv-notes">Notes</label>
+            <textarea
+              id="adv-notes"
+              class="adv-form__textarea"
+              appStripNgClasses
+              [ngModel]="notes()"
+              (ngModelChange)="notes.set($event)"
+              placeholder="Details, instructions, or context…"
+              rows="3"
+              maxlength="1000"></textarea>
+          </div>
+
+          <div class="adv-form__grid">
+            <div class="adv-form__section">
+              <span class="adv-form__eyebrow" id="adv-priority-label">Priority</span>
+              <div class="adv-form__chips" role="group" aria-labelledby="adv-priority-label">
+                @for (p of priorities; track p.value) {
+                  <button
+                    type="button"
+                    class="adv-chip"
+                    [class.selected]="priority() === p.value"
+                    [style.--chip-accent]="p.color"
+                    [attr.aria-pressed]="priority() === p.value"
+                    (click)="priority.set(p.value)">
+                    <i class="fas {{ p.icon }}" aria-hidden="true"></i>
+                    {{ p.label }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="adv-form__section">
+              <span class="adv-form__eyebrow" id="adv-category-label">Category</span>
+              <div class="adv-form__chips" role="group" aria-labelledby="adv-category-label">
+                @for (c of categories; track c.value) {
+                  <button
+                    type="button"
+                    class="adv-chip"
+                    [class.selected]="category() === c.value"
+                    [attr.aria-pressed]="category() === c.value"
+                    (click)="category.set(c.value)">
+                    <i class="fas {{ c.icon }}" aria-hidden="true"></i>
+                    {{ c.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="adv-panel">
+          <header class="adv-panel__head">
+            <div class="adv-panel__identity">
+              <span class="adv-step">02</span>
+              <div>
+                <h4>Schedule</h4>
+                <p>Due date, estimate, and tags</p>
+              </div>
+            </div>
+          </header>
+
+          <div class="adv-form__grid adv-form__grid--pair">
+            <div class="adv-form__field">
+              <div class="adv-form__label-row">
+                <label for="adv-due">Due date</label>
+                @if (dueDate()) {
+                  <button type="button" class="adv-link" (click)="onClearDue()">Clear</button>
+                }
+              </div>
+              <input
+                id="adv-due"
+                class="adv-form__input"
+                type="datetime-local"
+                [ngModel]="dueDate()"
+                (ngModelChange)="dueDate.set($event)"
+                [min]="minDueDate" />
+            </div>
+            <div class="adv-form__field">
+              <label for="adv-est">Estimate</label>
+              <div class="adv-form__estimate">
+                <div class="adv-form__chips" role="group" aria-label="Estimate presets">
+                  @for (mins of estimatePresets; track mins) {
+                    <button
+                      type="button"
+                      class="adv-chip"
+                      [class.selected]="estimatedTime() === mins"
+                      [attr.aria-pressed]="estimatedTime() === mins"
+                      (click)="onSetEstimate(mins)">
+                      {{ mins }}m
+                    </button>
+                  }
+                </div>
+                <input
+                  id="adv-est"
+                  class="adv-form__input adv-form__input--compact"
+                  type="number"
+                  [ngModel]="estimatedTime()"
+                  (ngModelChange)="estimatedTime.set(+$event || 0)"
+                  min="5"
+                  max="480"
+                  step="5"
+                  aria-label="Custom estimate in minutes" />
+              </div>
+            </div>
+          </div>
+
+          <div class="adv-form__field">
+            <label for="adv-tag">Tags</label>
+            <div class="adv-form__tag-row">
+              <input
+                id="adv-tag"
+                class="adv-form__input"
+                appStripNgClasses
+                type="text"
+                [ngModel]="newTag()"
+                (ngModelChange)="newTag.set($event)"
+                (keydown.enter)="onAddTag(); $event.preventDefault()"
+                placeholder="Add a tag"
+                maxlength="20" />
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="onAddTag()"
+                [disabled]="!newTag().trim()">
+                Add
+              </button>
+            </div>
+            @if (suggestedTags().length > 0) {
+              <div class="adv-suggestions">
+                <span>Suggestions</span>
+                @for (tag of suggestedTags(); track tag) {
+                  <button type="button" class="adv-suggestion" (click)="onAddSuggestedTag(tag)">
+                    + {{ tag }}
+                  </button>
+                }
+              </div>
+            }
+            @if (tags().length > 0) {
+              <div class="adv-form__tags">
+                @for (tag of tags(); track tag) {
+                  <span class="adv-tag">
+                    {{ tag }}
+                    <button type="button" (click)="onRemoveTag(tag)" [attr.aria-label]="'Remove ' + tag">
+                      <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="adv-panel">
+          <header class="adv-panel__head">
+            <div class="adv-panel__identity">
+              <span class="adv-step">03</span>
+              <div>
+                <h4>Look</h4>
+                <p>Accent color and marker</p>
+              </div>
+            </div>
+          </header>
+
+          <div class="adv-form__section">
+            <div class="adv-form__label-row">
+              <span class="adv-form__eyebrow" id="adv-color-label">Color</span>
+              <span class="adv-form__hex">{{ color() }}</span>
+            </div>
+            <div class="adv-form__colors" role="listbox" aria-labelledby="adv-color-label">
+              @for (c of presetColors; track c) {
+                <button
+                  type="button"
+                  class="adv-swatch"
+                  role="option"
+                  [class.selected]="color() === c"
+                  [attr.aria-selected]="color() === c"
+                  [style.--swatch]="c"
+                  [attr.aria-label]="'Color ' + c"
+                  (click)="color.set(c)">
+                  @if (color() === c) {
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="adv-form__section">
+            <span class="adv-form__eyebrow" id="adv-shape-label">Marker</span>
+            <div class="adv-form__shapes" role="group" aria-labelledby="adv-shape-label">
+              @for (s of shapes; track s.value) {
+                <button
+                  type="button"
+                  class="adv-shape"
+                  [class.selected]="shape() === s.value"
+                  [attr.aria-pressed]="shape() === s.value"
+                  (click)="shape.set(s.value!)">
+                  <span class="adv-shape__emoji" aria-hidden="true">{{ s.emoji }}</span>
+                  <span class="adv-shape__label">{{ s.label }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="adv-form__footer">
+        <div class="adv-form__footer-copy">
+          <p class="adv-form__hint">
+            @if (canSubmit()) {
+              Ready to drop onto the board
+            } @else {
+              Add a title to unlock create
+            }
+          </p>
+          <div class="adv-form__progress" aria-hidden="true">
+            <span [style.width]="completeness() + '%'"></span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn btn-primary adv-form__submit"
+          (click)="onCreate()"
+          [disabled]="!canSubmit()">
+          <span>Create task</span>
+          <span class="adv-form__submit-icon" aria-hidden="true">
+            <i class="fas fa-plus"></i>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

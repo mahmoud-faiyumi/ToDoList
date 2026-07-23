@@ -1,0 +1,10 @@
+{
+  "name": "FlowBoard",
+  "short_name": "FlowBoard",
+  "description": "Local-first personal kanban board",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f766e",
+  "icons": []
+}

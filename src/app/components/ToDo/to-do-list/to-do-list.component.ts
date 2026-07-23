@@ -1,83 +1,151 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
-import { ToDo } from '../../../models/todo.model';
+import { Component, input, output } from '@angular/core';
+import { ToDo, Priority, Category } from '../../../models/todo.model';
+import { getBackgroundWithOpacity } from '../../../shared/utils/color';
 import { ToDoStatus } from '../../../models/enum/todo.enum';
 import { FormsModule } from '@angular/forms';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-to-do-list',
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule, DragDropModule],
   templateUrl: './to-do-list.component.html',
   styleUrl: './to-do-list.component.css'
 })
 export class ToDoListComponent {
-  @Input() toDoItems: ToDo[] = [];
-  ToDoStatus = ToDoStatus;
+  readonly toDoItems = input<ToDo[]>([]);
+  readonly editingActive = input(false);
+  readonly isSelectionMode = input(false);
+  readonly selectedItems = input<Set<number>>(new Set());
+  readonly viewMode = input<'list' | 'grid'>('list');
 
-  constructor() {
-    this.loadToDoItems();
+  readonly editRequested = output<{ index: number; item: ToDo }>();
+  readonly toggleRequested = output<number>();
+  readonly deleteRequested = output<number>();
+  readonly reorderRequested = output<{ previousIndex: number; currentIndex: number }>();
+  readonly itemSelected = output<number>();
+
+  protected readonly ToDoStatus = ToDoStatus;
+
+  protected toggleDone(index: number): void {
+    this.toggleRequested.emit(index);
   }
 
-  private loadToDoItems(): void {
-    const savedItems = localStorage.getItem('toDoItems');
+  protected editItem(index: number): void {
+    this.editRequested.emit({ index, item: this.toDoItems()[index] });
+  }
 
-    if (savedItems) {
-      this.toDoItems = JSON.parse(savedItems);
-    } else {
-      this.toDoItems = [
-        { toDoItemText: 'Welcome to your To-Do List!', status: ToDoStatus.NEW, isEditing: false },
-        { toDoItemText: 'Click an item to edit or mark it as done.', status: ToDoStatus.NEW, isEditing: false },
-        { toDoItemText: 'Use the filter buttons to organize your tasks.', status: ToDoStatus.NEW, isEditing: false }
-      ];
-      this.saveToLocalStorage();
+  protected saveItem(index: number): void {
+    this.editRequested.emit({ index, item: this.toDoItems()[index] });
+  }
+
+  protected deleteItem(index: number): void {
+    this.deleteRequested.emit(index);
+  }
+
+  protected isItemEmpty(_toDo: ToDo): boolean {
+    return false;
+  }
+
+  protected areAllItemsEmpty(): boolean {
+    return this.toDoItems().every(item => this.isItemEmpty(item));
+  }
+
+  protected getShapeSymbol(shape: ToDo['shape']): string {
+    switch (shape) {
+      case 'circle':
+        return '📝';
+      case 'square':
+        return '📌';
+      case 'star':
+        return '⭐';
+      case 'triangle':
+        return '⚠️';
+      case 'heart':
+        return '❤️';
+      case 'diamond':
+        return '💡';
+      case 'hexagon':
+        return '✅';
+      default:
+        return '';
     }
   }
 
-  restoreItem(index: number): void {
-    this.toDoItems[index].status = ToDoStatus.RESTORED;
-    this.saveToLocalStorage();
+  protected readonly getBackgroundWithOpacity = getBackgroundWithOpacity;
+
+  protected drop(event: CdkDragDrop<ToDo[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    this.reorderRequested.emit({ previousIndex: event.previousIndex, currentIndex: event.currentIndex });
   }
 
-  removeItem(index: number): void {
-    this.toDoItems[index].status = ToDoStatus.DONE;
-    this.saveToLocalStorage();
+  protected onDragStarted(_event: unknown): void {}
+
+  protected onDragEnded(_event: unknown): void {}
+
+  protected onItemSelect(index: number): void {
+    if (this.isSelectionMode()) {
+      this.itemSelected.emit(index);
+    }
   }
 
-  editItem(index: number): void {
-    this.toDoItems[index].isEditing = true;
+  protected onItemClick(index: number, event: Event): void {
+    if (!this.isSelectionMode()) {
+      const target = event.target as HTMLElement;
+      if (target.closest('.drag-handle')) {
+        return;
+      }
+    } else {
+      this.onItemSelect(index);
+    }
   }
 
-  saveItem(index: number): void {
-    this.toDoItems[index].isEditing = false;
-    this.toDoItems[index].status = ToDoStatus.EDITED;
-    this.saveToLocalStorage();
+  protected isItemSelected(index: number): boolean {
+    return this.selectedItems().has(index);
   }
 
-  deleteItem(index: number): void {
-    this.toDoItems.splice(index, 1);
-    this.saveToLocalStorage();
-  }
-
-  isItemEmpty(toDo: ToDo): boolean {
-    return !toDo.toDoItemText || toDo.toDoItemText.trim() === '';
-  }
-
-  areAllItemsEmpty(): boolean {
-    return this.toDoItems.every(item => this.isItemEmpty(item));
-  }
-
-  private saveToLocalStorage(): void {
-    localStorage.setItem('toDoItems', JSON.stringify(this.toDoItems));
-  }
-
-  getStatusIcon(status: ToDoStatus): string {
-    const iconMap: { [key in ToDoStatus]: string } = {
-      [ToDoStatus.NEW]: 'fa-solid fa-plus-circle text-primary',
-      [ToDoStatus.DONE]: 'fa-solid fa-check text-success',
-      [ToDoStatus.EDITED]: 'fa-solid fa-pen text-warning',
-      [ToDoStatus.RESTORED]: 'fa-solid fa-undo text-info'
+  protected getPriorityIcon(priority: Priority): string {
+    const icons: Record<Priority, string> = {
+      urgent: 'fa-exclamation',
+      high: 'fa-arrow-up',
+      medium: 'fa-minus',
+      low: 'fa-arrow-down'
     };
-  
-    return iconMap[status] || 'fa-solid fa-question-circle text-secondary'; // Default icon if status is undefined
-  }  
+    return icons[priority];
+  }
+
+  protected getCategoryIcon(category: Category): string {
+    const icons: Record<Category, string> = {
+      work: 'fa-briefcase',
+      personal: 'fa-user',
+      shopping: 'fa-shopping-cart',
+      health: 'fa-heart',
+      finance: 'fa-dollar-sign',
+      learning: 'fa-graduation-cap',
+      travel: 'fa-plane',
+      other: 'fa-ellipsis-h'
+    };
+    return icons[category];
+  }
+
+  protected formatDate(date: Date): string {
+    const now = new Date();
+    const diffTime = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
+    if (diffDays > 0 && diffDays <= 7) return `In ${diffDays} days`;
+    if (diffDays < 0 && diffDays >= -7) return `${Math.abs(diffDays)} days ago`;
+
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    }).format(date);
+  }
+
+  protected isOverdue(date: Date): boolean {
+    return date < new Date();
+  }
 }

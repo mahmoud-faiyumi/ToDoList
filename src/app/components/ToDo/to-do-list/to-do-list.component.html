@@ -1,35 +1,114 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-<div class="toDoContainer" [ngClass]="{'hidden': areAllItemsEmpty()}">
-    <div class="toDoItem" *ngFor="let toDo of toDoItems; let i = index"
-        [ngClass]="{'deleted': toDo.status === ToDoStatus.DONE, 'hidden': isItemEmpty(toDo)}">
-
-        <div class="toDoItemText" [ngClass]="{'deleted': toDo.status === ToDoStatus.DONE}">
-            <input *ngIf="toDo.isEditing" type="text" [(ngModel)]="toDo.toDoItemText" (keyup.enter)="saveItem(i)"
-                class="editInput" />
-            <span *ngIf="!toDo.isEditing">{{ toDo.toDoItemText }}</span>
+<div
+  class="toDoContainer"
+  [class.hidden]="areAllItemsEmpty()"
+  [class.editing-active]="editingActive()"
+  [class.selection-mode]="isSelectionMode()"
+  [class.grid-view]="viewMode() === 'grid'"
+  [class.list-view]="viewMode() === 'list'"
+  cdkDropList
+  [cdkDropListData]="toDoItems()"
+  (cdkDropListDropped)="drop($event)"
+  role="list"
+  aria-label="Tasks">
+  @for (toDo of toDoItems(); track toDo; let i = $index) {
+    <div
+      class="toDoItem card"
+      cdkDrag
+      [style.background]="getBackgroundWithOpacity(toDo.color) || '#fff'"
+      [class.deleted]="toDo.status === ToDoStatus.DONE"
+      [class.hidden]="isItemEmpty(toDo)"
+      [class.is-editing]="toDo.isEditing"
+      [class.selected]="isItemSelected(i)"
+      [class.grid-item]="viewMode() === 'grid'"
+      [class.list-item]="viewMode() === 'list'"
+      role="listitem"
+      [attr.aria-label]="toDo.toDoItemText"
+      (click)="onItemClick(i, $event)"
+      (cdkDragStarted)="onDragStarted($event)"
+      (cdkDragEnded)="onDragEnded($event)">
+      @if (viewMode() === 'grid') {
+        <div class="grid-header">
+          @if (isSelectionMode()) {
+            <div class="selection-checkbox">
+              <input type="checkbox" [checked]="isItemSelected(i)" (click)="$event.stopPropagation()" (change)="onItemSelect(i)" [attr.aria-label]="'Select ' + toDo.toDoItemText">
+            </div>
+          }
+          @if (!isSelectionMode()) {
+            <div class="drag-handle" cdkDragHandle title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</div>
+          }
         </div>
-
-        <div class="toDoItemActions">
-            <button (click)="editItem(i)" *ngIf="!toDo.isEditing" title="Edit">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button (click)="saveItem(i)" *ngIf="toDo.isEditing" title="Save">
-                <i class="fas fa-save"></i>
-            </button>
-            <button (click)="removeItem(i)" title="Mark as Done">
-                <i class="fas fa-check-circle"></i>
-            </button>
-            <button (click)="restoreItem(i)" title="Undo">
-                <i class="fas fa-undo-alt"></i>
-            </button>
-            <button (click)="deleteItem(i)" title="Delete">
-                <i class="fas fa-trash"></i>
-            </button>
-        
-            <span class="status">
-                <i [class]="getStatusIcon(toDo.status)" title="{{ toDo.status | titlecase }}"></i>
-            </span>             
-        </div>        
+      }
+      @if (isSelectionMode() && viewMode() === 'list') {
+        <div class="selection-checkbox">
+          <input type="checkbox" [checked]="isItemSelected(i)" (click)="$event.stopPropagation()" (change)="onItemSelect(i)" [attr.aria-label]="'Select ' + toDo.toDoItemText">
+        </div>
+      }
+      @if (!isSelectionMode() && viewMode() === 'list') {
+        <div class="drag-handle" cdkDragHandle title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</div>
+      }
+      <div class="toDoItemContent">
+        <div class="toDoItemText" [class.deleted]="toDo.status === ToDoStatus.DONE">
+          {{ toDo.toDoItemText }}
+        </div>
+        @if (toDo.notes || toDo.tags?.length || toDo.dueDate || toDo.estimatedTime) {
+          <div class="toDoItemMeta">
+            @if (toDo.notes) {
+              <div class="notes">{{ toDo.notes }}</div>
+            }
+            @if (toDo.tags?.length) {
+              <div class="tags">
+                @for (tag of toDo.tags; track tag) {
+                  <span class="tag">{{ tag }}</span>
+                }
+              </div>
+            }
+            @if (toDo.dueDate) {
+              <div class="due-date" [class.overdue]="isOverdue(toDo.dueDate)">
+                <i class="fas fa-calendar"></i>
+                {{ formatDate(toDo.dueDate) }}
+              </div>
+            }
+            @if (toDo.estimatedTime) {
+              <div class="estimated-time">
+                <i class="fas fa-clock"></i>
+                {{ toDo.estimatedTime }}m
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <div class="toDoItemActions">
+        <div class="task-attributes">
+          @if (toDo.priority) {
+            <span class="priority-badge" [class]="'priority-' + toDo.priority">
+              <i class="fas" [class]="getPriorityIcon(toDo.priority)"></i>
+              {{ toDo.priority }}
+            </span>
+          }
+          @if (toDo.category) {
+            <span class="category-badge" [class]="'category-' + toDo.category">
+              <i class="fas" [class]="getCategoryIcon(toDo.category)"></i>
+              {{ toDo.category }}
+            </span>
+          }
+          @if (toDo.shape) {
+            <span class="shape-badge">
+              {{ getShapeSymbol(toDo.shape) }}
+            </span>
+          }
+        </div>
+        <div class="action-buttons">
+          <button type="button" class="btn btn-ghost btn-icon" (click)="editItem(i); $event.stopPropagation()" title="Edit" [attr.aria-label]="'Edit ' + toDo.toDoItemText">
+            <i class="fas fa-edit" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn-ghost btn-icon" (click)="toggleDone(i); $event.stopPropagation()" [title]="toDo.status === ToDoStatus.DONE ? 'Mark as not done' : 'Mark as done'" [attr.aria-label]="toDo.status === ToDoStatus.DONE ? 'Mark as not done' : 'Mark as done'">
+            <i class="fas" [class]="toDo.status === ToDoStatus.DONE ? 'fa-rotate-left' : 'fa-check-circle'" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn-ghost btn-icon" (click)="deleteItem(i); $event.stopPropagation()" title="Delete" [attr.aria-label]="'Delete ' + toDo.toDoItemText">
+            <i class="fas fa-trash" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
     </div>
+  }
 </div>

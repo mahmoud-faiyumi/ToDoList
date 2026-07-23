@@ -1,0 +1,24 @@
+<div class="dashboard-page">
+  <header class="app-topbar">
+    <div class="app-topbar__inner">
+      <div class="app-topbar__brand">
+        <span class="app-topbar__mark" aria-hidden="true">
+          <i class="fas fa-chart-line"></i>
+        </span>
+        <div class="app-topbar__identity">
+          <h1 class="app-topbar__title">Dashboard</h1>
+          <p class="app-topbar__subtitle">Productivity at a glance</p>
+        </div>
+      </div>
+      <nav class="app-topbar__nav" aria-label="Primary">
+        <div class="app-nav-tabs" role="tablist" aria-label="Views">
+          <a routerLink="/" class="app-nav-tabs__link">Board</a>
+          <a routerLink="/dashboard" routerLinkActive="is-active" class="app-nav-tabs__link">Dashboard</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <div class="dashboard-body">
+    <app-productivity-dashboard [isVisible]="true"></app-productivity-dashboard>
+  </div>
+</div>

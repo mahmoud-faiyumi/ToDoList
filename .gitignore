@@ -136,3 +136,10 @@ dist
 .pnp.*
 
 .vscode
+.idea
+.cursor
+.cursorrules
+.cursorignore
+
+# Angular CLI cache
+.angular/

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideRouter } from '@angular/router';
 import { ToDoListPageComponent } from './to-do-list-page.component';
+import { routes } from '../app.routes';
 
 describe('ToDoListPageComponent', () => {
   let component: ToDoListPageComponent;
@@ -8,7 +9,8 @@ describe('ToDoListPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ToDoListPageComponent]
+      imports: [ToDoListPageComponent],
+      providers: [provideRouter(routes)]
     })
     .compileComponents();
 

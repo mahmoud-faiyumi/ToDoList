@@ -1,0 +1,77 @@
+<div
+  class="issue-card"
+  cdkDrag
+  [cdkDragData]="task()"
+  [class.issue-card--done]="task().status === ToDoStatus.DONE"
+  [class.issue-card--selected]="selected()"
+  [style.--card-accent]="accentColor() || 'var(--muted-color)'"
+  (click)="onCardClick($event)"
+  role="article"
+  [attr.aria-label]="task().toDoItemText">
+  <div class="issue-card__accent" aria-hidden="true"></div>
+  <div class="issue-card__placeholder" *cdkDragPlaceholder></div>
+  <div class="issue-card__grip" cdkDragHandle aria-label="Drag to move">
+    <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+  </div>
+  <div class="issue-card__body">
+    <div class="issue-card__header">
+      <span class="issue-card__key">{{ issueKey(task().id) }}</span>
+      @if (isSelectionMode()) {
+        <input
+          type="checkbox"
+          class="issue-card__check"
+          [checked]="selected()"
+          (click)="$event.stopPropagation()"
+          (change)="selectionChange.emit(task())"
+          [attr.aria-label]="'Select ' + task().toDoItemText" />
+      }
+    </div>
+    <p class="issue-card__summary">{{ task().toDoItemText || 'Untitled' }}</p>
+    @if (task().notes) {
+      <p class="issue-card__notes">{{ task().notes }}</p>
+    }
+    <div class="issue-card__meta">
+      @if (task().priority) {
+        <span class="issue-chip issue-chip--priority issue-chip--{{ task().priority }}">
+          <i [class]="'fas ' + getPriorityIcon(task().priority!)"></i>
+          {{ task().priority }}
+        </span>
+      }
+      @if (task().category) {
+        <span class="issue-chip issue-chip--category">
+          <i [class]="'fas ' + getCategoryIcon(task().category!)"></i>
+          {{ task().category }}
+        </span>
+      }
+      @if (task().dueDate) {
+        <span class="issue-chip issue-chip--due" [class.issue-chip--overdue]="isOverdue(task().dueDate!)">
+          <i class="fas fa-calendar" aria-hidden="true"></i>
+          {{ formatDue(task().dueDate!) }}
+        </span>
+      }
+    </div>
+    @if (task().tags?.length) {
+      <div class="issue-card__tags">
+        @for (tag of task().tags; track tag) {
+          <span class="issue-tag">{{ tag }}</span>
+        }
+      </div>
+    }
+  </div>
+  <div class="issue-card__actions">
+    <button type="button" class="issue-icon-btn" (click)="onEdit($event)" title="Edit" [attr.aria-label]="'Edit ' + task().toDoItemText">
+      <i class="fas fa-pen" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      class="issue-icon-btn"
+      (click)="onToggle($event)"
+      [title]="task().status === ToDoStatus.DONE ? 'Reopen' : 'Complete'"
+      [attr.aria-label]="task().status === ToDoStatus.DONE ? 'Reopen' : 'Complete'">
+      <i class="fas" [class.fa-undo]="task().status === ToDoStatus.DONE" [class.fa-check]="task().status !== ToDoStatus.DONE" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="issue-icon-btn issue-icon-btn--danger" (click)="onDelete($event)" title="Delete" [attr.aria-label]="'Delete ' + task().toDoItemText">
+      <i class="fas fa-trash" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>

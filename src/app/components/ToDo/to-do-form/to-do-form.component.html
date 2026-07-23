@@ -1,5 +1,84 @@
-<h1>Add item form</h1>
-<div class="addToDoContainer">
-    <input type="text" name="item" [(ngModel)]="toDoText" placeholder="Enter a new to-do item" class="addToDoInput" />
-    <button (click)="addToDo()" class="addToDoButton">Add</button>
+<div class="quick-add">
+  @if (targetColumn()) {
+    <div class="quick-add__target">
+      <i class="fas fa-columns" aria-hidden="true"></i>
+      <span>Adding to <strong>{{ targetColumn() }}</strong></span>
+    </div>
+  }
+
+  <div class="quick-add__body">
+    <div class="quick-add__field">
+      <label for="quick-add-title">Task</label>
+      <div class="quick-add__input-wrap">
+        <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+        <input
+          #taskInput
+          id="quick-add-title"
+          appStripNgClasses
+          class="quick-add__input"
+          type="text"
+          name="item"
+          [ngModel]="toDoText()"
+          (ngModelChange)="onTextChange($event)"
+          (keydown.enter)="onAdd()"
+          placeholder="What needs to be done?"
+          autocomplete="off"
+          maxlength="120" />
+      </div>
+    </div>
+
+    <section class="quick-add__section" aria-labelledby="quick-priority-label">
+      <div class="quick-add__section-head">
+        <h4 id="quick-priority-label">Priority</h4>
+        <span>Optional</span>
+      </div>
+      <div class="quick-add__chips" role="group" aria-label="Priority">
+        @for (priority of priorities; track priority.value) {
+          <button
+            type="button"
+            class="quick-chip quick-chip--{{ priority.value }}"
+            [class.selected]="selectedPriority() === priority.value"
+            [attr.aria-pressed]="selectedPriority() === priority.value"
+            (click)="onTogglePriority(priority.value)">
+            {{ priority.label }}
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="quick-add__section" aria-labelledby="quick-category-label">
+      <div class="quick-add__section-head">
+        <h4 id="quick-category-label">Category</h4>
+        <span>Optional</span>
+      </div>
+      <div class="quick-add__chips" role="group" aria-label="Category">
+        @for (category of categories; track category.value) {
+          <button
+            type="button"
+            class="quick-chip"
+            [class.selected]="selectedCategory() === category.value"
+            [attr.aria-pressed]="selectedCategory() === category.value"
+            (click)="onSelectCategory(category.value)">
+            {{ category.label }}
+          </button>
+        }
+      </div>
+    </section>
+  </div>
+
+  <div class="quick-add__footer">
+    <div class="quick-add__shortcuts" aria-hidden="true">
+      <span><kbd>Enter</kbd> add</span>
+      <span><kbd>Esc</kbd> close</span>
+    </div>
+    <div class="quick-add__actions">
+      <button type="button" class="btn btn-ghost" (click)="onClear()" [disabled]="!canSubmit()">
+        Clear
+      </button>
+      <button type="button" class="btn btn-primary" (click)="onAdd()" [disabled]="!canSubmit()">
+        <i class="fas fa-plus" aria-hidden="true"></i>
+        Add task
+      </button>
+    </div>
+  </div>
 </div>
